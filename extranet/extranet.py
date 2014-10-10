@@ -88,6 +88,10 @@ class Extranet(object):
 
         return json.loads(r.text, object_hook=extranet_event_parser)
 
+    @property
+    def timetable(self):
+        return self.get_timetable()
+
     def get_documents_categories(self):
         if not self.logged:
             self.login()
