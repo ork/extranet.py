@@ -2,11 +2,10 @@ import requests
 import json
 import re
 from datetime import date, datetime, timedelta
-from .exceptions import *
+from extranet.exceptions import *
 
 UA_STRING = 'Mozilla/5.0 (Extranet-py)'
 
-BASE_URL = 'https://extranet.efrei.fr'
 LOGIN_URL = '/Users/Account/DoLogin'
 EVENT_URL = '/Student/Calendar/GetStudentEvents'
 DOCUMENTS_TREE_URL = '/Student/Home/GetDocumentTree'
@@ -33,10 +32,11 @@ def extranet_event_parser(dct):
 
 class Extranet(object):
 
-    def __init__(self, username=None, password=None):
+    def __init__(self, base_url=None, username=None, password=None):
         self._username = username
         self._password = password
 
+        self.base_url = base_url
         self.connected = False
         self.logged = False
         self.session = None
@@ -48,7 +48,7 @@ class Extranet(object):
         self.session.headers.update({'User-Agent': UA_STRING})
 
         try:
-            self.session.get(BASE_URL)
+            self.session.get(self.base_url)
         except requests.ConnectionError as e:
             raise ConnectionError
         else:
@@ -66,7 +66,7 @@ class Extranet(object):
             'password': self._password
         }
 
-        self.session.post(BASE_URL + LOGIN_URL, params=auth_info)
+        self.session.post(self.base_url + LOGIN_URL, params=auth_info)
 
         if not 'extranet_db' in self.session.cookies:
             raise LoginError
@@ -85,7 +85,7 @@ class Extranet(object):
             'end': next_week.timestamp()
         }
 
-        r = self.session.get(BASE_URL + EVENT_URL, params=timetable_delta)
+        r = self.session.get(self.base_url + EVENT_URL, params=timetable_delta)
 
         return json.loads(r.text, object_hook=extranet_event_parser)
 
@@ -97,7 +97,7 @@ class Extranet(object):
         if not self.logged:
             self.login()
 
-        r = e.session.get(BASE_URL + DOCUMENTS_TREE_URL)
+        r = e.session.get(self.base_url + DOCUMENTS_TREE_URL)
         good_json = re.sub(BADJSON_FORMAT, '"osef"', r.text)
 
         parsed_json = json.loads(good_json)
@@ -119,7 +119,7 @@ class Extranet(object):
                 'limit' : 25,
             }
 
-            r = e.session.get(BASE_URL + DOCUMENTS_URL, params=paging)
+            r = e.session.get(self.base_url + DOCUMENTS_URL, params=paging)
 
             parsed_json = json.loads(r.text)
 
