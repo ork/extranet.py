@@ -73,25 +73,29 @@ class Extranet(object):
         else:
             self.logged = True
 
-    def get_timetable(self, days=7):
+    def get_timetable(self, start, end):
         if not self.logged:
             self.login()
 
-        yesterday = datetime.combine(date.today(), datetime.min.time())
-        next_week = yesterday + timedelta(days)
-
         timetable_delta = {
-            'start': yesterday.timestamp(),
-            'end': next_week.timestamp()
+            'start': start.timestamp(),
+            'end': end.timestamp()
         }
 
         r = self.session.get(self.base_url + EVENT_URL, params=timetable_delta)
 
         return json.loads(r.text, object_hook=extranet_event_parser)
 
-    @property
-    def timetable(self):
-        return self.get_timetable()
+    def get_planning(self, start=None, weeks=3):
+        if start is None:
+            # Default, begin monday of the current week
+            today = datetime.combine(date.today(), datetime.min.time())
+            last_monday = today - timedelta(days=today.weekday())
+            start = last_monday
+
+        next_weeks = start + timedelta(weeks=weeks)
+
+        return self.get_timetable(start, next_weeks)
 
     def get_documents_categories(self):
         if not self.logged:
