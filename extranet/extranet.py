@@ -5,6 +5,9 @@ from datetime import date, datetime, timedelta
 from extranet.exceptions import *
 
 def extranet_event_parser(dct):
+    DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+    TITLE_FORMAT = r'(?P<title>.*)\s+-\s+(?P<teacher>.*)\s+-\s+(?P<room>.*)\s+$'
+
     # Parse date and time
     for k, v in dct.items():
         if k in ['start', 'end']:
@@ -15,7 +18,14 @@ def extranet_event_parser(dct):
 
     # Parse title and extract title, teacher and room
     parsed_title = re.search(TITLE_FORMAT, dct['title']).groupdict()
-    dct.update(parsed_title)
+
+    # We could simply use parsed_title, but we need error-prone filtering
+    safe_dict = {
+        'teacher' : parsed_title['teacher'] or 'Unknown Teacher',
+        'title'   : parsed_title['title']   or 'Unknown Title',
+        'room'    : parsed_title['room']    or 'Unknown Room'
+    }
+    dct.update(safe_dict)
 
     return dct
 
@@ -27,9 +37,7 @@ class Extranet(object):
     __EVENT_URL = '/Student/Calendar/GetStudentEvents'
     __DOCUMENTS_TREE_URL = '/Student/Home/GetDocumentTree'
     __DOCUMENTS_URL = '/Student/Home/GetDocuments'
-    __DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-    __TITLE_FORMAT = r'(?P<title>.*)\s+-\s+(?P<teacher>.*)\s+-\s+(?P<room>.*)\s+$'
     __BADJSON_FORMAT = r'X\.net\.RM\.getIcon\("\w+"\)'
 
     def __init__(self, base_url=None, username=None, password=None):
