@@ -4,17 +4,6 @@ import re
 from datetime import date, datetime, timedelta
 from extranet.exceptions import *
 
-UA_STRING = 'Mozilla/5.0 (Extranet-py)'
-
-LOGIN_URL = '/Users/Account/DoLogin'
-EVENT_URL = '/Student/Calendar/GetStudentEvents'
-DOCUMENTS_TREE_URL = '/Student/Home/GetDocumentTree'
-DOCUMENTS_URL = '/Student/Home/GetDocuments'
-DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
-
-TITLE_FORMAT = r'(?P<title>.*)\s+-\s+(?P<teacher>.*)\s+-\s+(?P<room>.*)\s+$'
-BADJSON_FORMAT = r'X\.net\.RM\.getIcon\("\w+"\)'
-
 def extranet_event_parser(dct):
     # Parse date and time
     for k, v in dct.items():
@@ -32,6 +21,17 @@ def extranet_event_parser(dct):
 
 class Extranet(object):
 
+    __UA_STRING = 'Mozilla/5.0 (Extranet-py)'
+
+    __LOGIN_URL = '/Users/Account/DoLogin'
+    __EVENT_URL = '/Student/Calendar/GetStudentEvents'
+    __DOCUMENTS_TREE_URL = '/Student/Home/GetDocumentTree'
+    __DOCUMENTS_URL = '/Student/Home/GetDocuments'
+    __DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
+    __TITLE_FORMAT = r'(?P<title>.*)\s+-\s+(?P<teacher>.*)\s+-\s+(?P<room>.*)\s+$'
+    __BADJSON_FORMAT = r'X\.net\.RM\.getIcon\("\w+"\)'
+
     def __init__(self, base_url=None, username=None, password=None):
         self._username = username
         self._password = password
@@ -45,7 +45,7 @@ class Extranet(object):
         if not self.session:
             self.session = requests.Session()
 
-        self.session.headers.update({'User-Agent': UA_STRING})
+        self.session.headers.update({'User-Agent': self.__UA_STRING})
 
         try:
             self.session.get(self.base_url)
@@ -66,7 +66,7 @@ class Extranet(object):
             'password': self._password
         }
 
-        self.session.post(self.base_url + LOGIN_URL, params=auth_info)
+        self.session.post(self.base_url + self.__LOGIN_URL, params=auth_info)
 
         if not 'extranet_db' in self.session.cookies:
             raise LoginError
@@ -82,7 +82,7 @@ class Extranet(object):
             'end': end.timestamp()
         }
 
-        r = self.session.get(self.base_url + EVENT_URL, params=timetable_delta)
+        r = self.session.get(self.base_url + self.__EVENT_URL, params=timetable_delta)
 
         return json.loads(r.text, object_hook=extranet_event_parser)
 
@@ -101,8 +101,8 @@ class Extranet(object):
         if not self.logged:
             self.login()
 
-        r = e.session.get(self.base_url + DOCUMENTS_TREE_URL)
-        good_json = re.sub(BADJSON_FORMAT, '"osef"', r.text)
+        r = e.session.get(self.base_url + self.__DOCUMENTS_TREE_URL)
+        good_json = re.sub(self.__BADJSON_FORMAT, '"osef"', r.text)
 
         parsed_json = json.loads(good_json)
 
@@ -123,7 +123,7 @@ class Extranet(object):
                 'limit' : 25,
             }
 
-            r = e.session.get(self.base_url + DOCUMENTS_URL, params=paging)
+            r = e.session.get(self.base_url + self.__DOCUMENTS_URL, params=paging)
 
             parsed_json = json.loads(r.text)
 
